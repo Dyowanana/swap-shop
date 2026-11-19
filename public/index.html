@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Swap Shop</title>
+<style>
+  :root {
+    --bg: #fbf7ef; --card: #ffffff; --ink: #1d1b16; --muted: #6f6a5f; --line: #e7e0d2;
+    --accent: #e0662a; --accent-ink: #fff; --good: #2f8a4f; --bad: #c0392b; --soft: #f3ede0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #17150f; --card: #221f18; --ink: #f2ede2; --muted: #a49d8e; --line: #3a352a;
+      --accent: #f07b3f; --soft: #2b271e; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  main.wide { max-width: 1100px; }
+  h1 { font-size: 28px; margin: 8px 0 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 18px; margin: 0 0 10px; }
+  .muted { color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 12px 0; }
+  button { font: inherit; border: 0; border-radius: 10px; padding: 12px 16px; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  button.ghost { background: var(--soft); color: var(--ink); }
+  button.small { padding: 6px 10px; font-size: 14px; }
+  button:disabled { opacity: .4; cursor: default; }
+  input { font: inherit; padding: 12px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink); width: 100%; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1; }
+  .hidden { display: none !important; }
+  .hand { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 30px; line-height: 1; padding: 8px; border-radius: 12px; background: var(--soft);
+    border: 2px solid transparent; cursor: pointer; user-select: none; }
+  .chip.sel { border-color: var(--accent); background: transparent; }
+  .chip .n { font-size: 13px; font-weight: 700; vertical-align: top; margin-left: 2px; }
+  .stat { font-size: 32px; font-weight: 700; }
+  .code { font-size: clamp(56px, 12vw, 120px); font-weight: 800; letter-spacing: .12em; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--soft); font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .offer { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .offer:last-child { border-bottom: 0; }
+  .big { font-size: 26px; }
+  .err { color: var(--bad); min-height: 1.4em; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+  .feed { max-height: 320px; overflow: auto; font-size: 15px; }
+  .feed div { padding: 4px 0; }
+  .bar { height: 26px; background: var(--accent); border-radius: 6px; color: #fff; font-size: 13px;
+    padding: 4px 8px; white-space: nowrap; min-width: 34px; }
+  .players { display: flex; flex-wrap: wrap; gap: 8px; }
+  .players .pill { font-size: 16px; padding: 6px 12px; }
+  .off { opacity: .45; }
+  .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .item { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 12px; background: var(--soft); border: 2px solid var(--accent); }
+  .item.offi { border-color: transparent; opacity: .45; }
+  .item .em { font-size: 28px; cursor: pointer; }
+  .item .lbl { font-size: 12px; color: var(--muted); }
+  .item input { width: 56px; padding: 6px; }
+  .ico { width: 1.15em; height: 1.15em; vertical-align: -0.2em; display: inline-block; }
+  .timer { font-variant-numeric: tabular-nums; }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--bg);
+    padding: 10px 16px; border-radius: 10px; font-weight: 600; max-width: 90vw; }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<main id="home">
+  <h1>🔁 Swap Shop</h1>
+  <p class="muted">A trading game about why money was invented.</p>
+  <div class="card">
+    <h2>Join a game</h2>
+    <div class="row" style="margin-bottom:10px"><input id="jCode" placeholder="Room code" maxlength="4" autocapitalize="characters" style="text-transform:uppercase"></div>
+    <div class="row" style="margin-bottom:10px"><input id="jName" placeholder="Your name" maxlength="16"></div>
+    <button id="jBtn" style="width:100%">Join</button>
+    <div class="err" id="jErr"></div>
+  </div>
+  <div class="card">
+    <h2>Teacher</h2>
+    <p class="muted" style="margin-top:0">Put this on the projector. Students join on their phones.</p>
+    <div class="row"><button class="ghost" id="hBtn">Host a new game</button><button class="ghost" id="dBtn">Try a demo with bots</button></div>
+  </div>
+</main>
+
+<!-- HOST -->
+<main id="host" class="wide hidden">
+  <div class="row">
+    <div class="grow">
+      <div class="muted">Join at <b id="hUrl"></b> with code</div>
+      <div class="code" id="hCode"></div>
+    </div>
+    <div style="text-align:right">
+      <div class="pill" id="hPhase"></div>
+      <div class="stat timer" id="hTimer"></div>
+    </div>
+  </div>
+
+  <div class="card row">
+    <button id="hStart1">Start round 1: Barter</button>
+    <button id="hBots" class="ghost hidden">+ Add 5 bots</button>
+    <button id="hStart2" class="hidden">Start round 2: Money</button>
+    <button id="hEnd" class="ghost hidden">End round now</button>
+    <button id="hNew" class="ghost hidden">New game</button>
+    <span class="muted" id="hHint"></span>
+  </div>
+
+  <div class="card hidden" id="hDemo" style="border-color:var(--accent)">
+    <div class="row"><div class="grow"><b>Demo mode.</b> <span class="muted">Bots are playing. Open a student view to trade with them, then start round 1 here.</span></div>
+    <button id="hOpenStudent">Open student view ↗</button></div>
+  </div>
+
+  <div class="card" id="hSettings">
+    <div class="row" style="margin-bottom:10px">
+      <h2 class="grow" style="margin:0">Items in the game</h2>
+      <span class="muted" id="hTotal"></span>
+      <button class="small ghost" id="hAuto">Auto</button>
+    </div>
+    <p class="muted" style="margin:0 0 10px;font-size:14px">Tap an item to switch it on or off. The number is how many exist in the whole game. They get shuffled and shared out evenly. Auto = 8 per player.</p>
+    <div class="items" id="hItems"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Players <span class="muted" id="hCount"></span></h2>
+      <div class="players" id="hPlayers"></div>
+    </div>
+    <div class="card">
+      <h2>Trades <span class="muted" id="hTrades"></span></h2>
+      <div class="feed" id="hFeed"><span class="muted">Trades appear here live.</span></div>
+    </div>
+  </div>
+
+  <div class="card" id="hLeader"></div>
+  <div class="card hidden" id="hResults"></div>
+</main>
+
+<!-- PLAYER -->
+<main id="play" class="hidden">
+  <div class="row">
+    <div class="grow"><b id="pName"></b> <span class="muted" id="pRoom"></span></div>
+    <span class="pill" id="pPhase"></span>
+    <span class="timer" id="pTimer"></span>
+  </div>
+
+  <div class="card" id="pWait">
+    <h2 id="pWaitTitle">You're in!</h2>
+    <p class="muted" id="pWaitText" style="margin:0">Wait for your teacher to start the round.</p>
+  </div>
+
+  <div id="pGame" class="hidden">
+    <div class="card">
+      <div class="row">
+        <div class="grow"><div class="muted">Score</div><div class="stat" id="pScore">0</div></div>
+        <div id="pCashBox"><div class="muted">Cash</div><div class="stat" id="pCash">$0</div></div>
+      </div>
+      <div class="hand" id="pHand" style="margin-top:10px"></div>
+      <p class="muted" style="margin:10px 0 0;font-size:14px">Collect matching items. Pair = 5 · 3 of a kind = 15 · 4 = 30 · 5 = 50 · 6 = 75 …<span id="pCashRule"></span></p>
+    </div>
+
+    <div class="card" id="pIncomingCard">
+      <h2>Offers for you</h2>
+      <div id="pIncoming"><span class="muted">None yet.</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Make an offer</h2>
+      <div class="muted" style="margin-bottom:6px">1. Pick a classmate</div>
+      <div class="players" id="pPeople"></div>
+      <div id="pBuilder" class="hidden">
+        <div class="muted" style="margin:14px 0 6px">2. What you get from <b id="pThem"></b></div>
+        <div class="hand" id="pTheirHand"></div>
+        <div class="row cashrow" style="margin-top:8px"><span class="muted">or cash $</span><input id="pGetCash" type="number" min="1" inputmode="numeric" style="width:100px"></div>
+        <div class="muted" style="margin:14px 0 6px">3. What you give</div>
+        <div class="hand" id="pMyHand"></div>
+        <div class="row cashrow" style="margin-top:8px"><span class="muted">or cash $</span><input id="pGiveCash" type="number" min="1" inputmode="numeric" style="width:100px"></div>
+        <div class="row" style="margin-top:14px">
+          <div class="big grow" id="pSummary"></div>
+          <button id="pSend">Send offer</button>
+        </div>
+        <div class="err" id="pErr"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Your open offers</h2>
+      <div id="pOutgoing"><span class="muted">None.</span></div>
+    </div>
+  </div>
+</main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const socket = io();
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+let S = null, offers = [], mode = null, host = null, player = null;
+let pick = { to: null, getItem: null, giveItem: null };
+
+function show(id) { ['home', 'host', 'play'].forEach((x) => $(x).classList.toggle('hidden', x !== id)); }
+function toast(t) {
+  const d = document.createElement('div'); d.className = 'toast'; d.innerHTML = t;
+  document.body.appendChild(d); setTimeout(() => d.remove(), 2500);
+}
+const GOLD = '<svg class="ico" viewBox="0 0 64 64" aria-label="Gold"><defs><linearGradient id="gT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset="1" stop-color="#f5c542"/></linearGradient><linearGradient id="gF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2b81c"/><stop offset="1" stop-color="#b57d06"/></linearGradient></defs><polygon points="16,22 48,22 58,44 6,44" fill="url(#gT)" stroke="#a06d00" stroke-width="2" stroke-linejoin="round"/><polygon points="6,44 58,44 58,50 6,50" fill="url(#gF)" stroke="#a06d00" stroke-width="2" stroke-linejoin="round"/><path d="M20 26 L28 26" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/></svg>';
+const ico = (e) => (e === '🪙' ? GOLD : e);
+const side = (s) => (s.item ? ico(s.item) : `$${s.cash}`);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function grouped(hand) {
+  const c = {}; hand.forEach((i) => (c[i] = (c[i] || 0) + 1));
+  return Object.entries(c).sort((a, b) => b[1] - a[1]);
+}
+function phaseLabel(st) {
+  if (st.phase === 'lobby') return 'Lobby';
+  if (st.phase === 'playing') return st.round === 1 ? 'Round 1 · Barter' : 'Round 2 · Money';
+  if (st.phase === 'between') return 'Round 1 over';
+  return 'Game over';
+}
+
+// ---------- home ----------
+const params = new URLSearchParams(location.search);
+if (params.get('code')) $('jCode').value = params.get('code');
+if (params.get('name')) $('jName').value = params.get('name');
+$('jBtn').onclick = () => join($('jCode').value, $('jName').value);
+$('jName').onkeydown = (e) => e.key === 'Enter' && $('jBtn').click();
+$('hBtn').onclick = () => socket.emit('host:create', null, (r) => { host = r; store.set('host', r); mode = 'host'; show('host'); render(); });
+
+function join(code, name, playerId) {
+  socket.emit('player:join', { code, name, playerId }, (r) => {
+    if (r.error) { $('jErr').textContent = r.error; if (playerId) store.del('player'); return; }
+    player = r; store.set('player', r); mode = 'player'; show('play'); render();
+  });
+}
+
+// reconnect / resume after refresh
+socket.on('connect', () => {
+  const h = store.get('host'), p = store.get('player');
+  if (mode === 'host' || (!mode && h && !params.get('code'))) {
+    if (h) socket.emit('host:resume', h, (r) => { if (r.error) { store.del('host'); mode = null; show('home'); } else { host = h; mode = 'host'; show('host'); } });
+  } else if (mode === 'player' || (!mode && p && (!params.get('code') || p.code === params.get('code').toUpperCase()))) {
+    if (p) join(p.code, null, p.playerId);
+  }
+});
+socket.on('kicked', () => { store.del('player'); mode = null; show('home'); $('jErr').textContent = 'You were removed from the game.'; });
+
+socket.on('state', (st) => { S = st; render(); });
+socket.on('offers', (o) => { offers = o; if (mode === 'player') renderOffers(); });
+socket.on('trade', (t) => {
+  if (mode === 'host') {
+    const f = $('hFeed');
+    if (f.querySelector('.muted')) f.innerHTML = '';
+    const d = document.createElement('div');
+    d.innerHTML = `<b>${esc(t.a)}</b> ${side(t.give)} ⇄ ${side(t.get)} <b>${esc(t.b)}</b>`;
+    f.prepend(d);
+  } else if (player && S) {
+    const me = S.players.find((p) => p.id === player.playerId);
+    if (me && (t.a === me.name || t.b === me.name)) toast(`Trade done: ${side(t.give)} ⇄ ${side(t.get)}`);
+  }
+});
+
+function render() {
+  if (!S) return;
+  if (mode === 'host') renderHost(); else if (mode === 'player') renderPlayer();
+}
+
+// ---------- host ----------
+function renderHost() {
+  const url = location.host;
+  $('hUrl').textContent = url;
+  $('hCode').textContent = S.code;
+  $('hPhase').textContent = phaseLabel(S);
+  $('hCount').textContent = `(${S.players.length})`;
+  $('hTrades').textContent = S.phase === 'playing' ? `(${S.tradeCount} this round)` : '';
+  $('hPlayers').innerHTML = S.players.map((p) =>
+    `<span class="pill ${p.online ? '' : 'off'}" title="Click to remove" data-id="${p.id}">${p.bot ? '🤖 ' : ''}${esc(p.name)}</span>`).join('') ||
+    '<span class="muted">Waiting for students…</span>';
+  $('hPlayers').querySelectorAll('[data-id]').forEach((el) => el.onclick = () => {
+    if (confirm(`Remove ${el.textContent}?`)) socket.emit('host:kick', { hostToken: host.hostToken, playerId: el.dataset.id });
+  });
+
+  renderSettings();
+  $('hDemo').classList.toggle('hidden', !(demo || S.players.some((p) => p.bot)) || S.phase === 'done');
+  const enough = S.players.length >= 2;
+  $('hStart1').classList.toggle('hidden', S.phase !== 'lobby');
+  $('hStart1').disabled = !enough;
+  $('hStart2').classList.toggle('hidden', S.phase !== 'between');
+  $('hEnd').classList.toggle('hidden', S.phase !== 'playing');
+  $('hBots').classList.toggle('hidden', S.phase !== 'lobby' || S.players.filter((p) => p.bot).length >= 8);
+  $('hNew').classList.toggle('hidden', S.phase !== 'done');
+  $('hHint').textContent = S.phase === 'lobby' && !enough ? 'Need at least 2 players.' :
+    S.phase === 'between' ? 'Talk about it: what made trading hard? Then start round 2.' : '';
+
+  if (S.phase === 'playing') {
+    const top = [...S.players].sort((a, b) => b.gain - a.gain).slice(0, 8);
+    $('hLeader').classList.remove('hidden');
+    $('hLeader').innerHTML = `<h2>Biggest gains this round</h2><table><tr><th>Player</th><th>Items</th><th>Trades</th><th>Gain</th></tr>` +
+      top.map((p) => `<tr><td>${esc(p.name)}</td><td>${p.hand.map(ico).join('')}${S.round === 2 ? ` · $${p.cash}` : ''}</td><td>${p.trades}</td><td><b>+${p.gain}</b></td></tr>`).join('') + '</table>';
+  } else {
+    $('hLeader').classList.add('hidden');
+  }
+
+  $('hResults').classList.toggle('hidden', !S.history.length);
+  if (S.history.length) {
+    const max = Math.max(...S.history.map((h) => Math.max(h.avgGain, h.trades)), 1);
+    $('hResults').classList.remove('hidden');
+    $('hResults').innerHTML = `<h2>Results</h2><table><tr><th>Round</th><th>Trades</th><th>Avg score start</th><th>Avg score end</th><th>Avg gain</th></tr>` +
+      S.history.map((h) => `<tr><td>${h.round}. ${h.label}</td><td>${h.trades}</td><td>${h.avgStart}</td><td>${h.avgEnd}</td><td><b>+${h.avgGain}</b></td></tr>`).join('') +
+      `</table><div style="margin-top:14px">` +
+      S.history.map((h) => `<div class="row" style="margin:6px 0"><span style="width:80px">${h.label}</span><div class="grow"><div class="bar" style="width:${Math.max(4, (h.avgGain / max) * 100)}%">+${h.avgGain} avg gain</div></div></div>`).join('') +
+      `</div>` + (S.phase === 'done' ? `<p class="muted">Did money make it easier to find a trade? Barter only works if you both want what the other has. Economists call that the "double coincidence of wants".</p>` : '');
+  }
+}
+
+// ---------- player ----------
+function renderPlayer() {
+  const me = S.players.find((p) => p.id === player.playerId);
+  if (!me) return;
+  $('pName').textContent = me.name;
+  $('pRoom').textContent = `· ${S.code}`;
+  $('pPhase').textContent = phaseLabel(S);
+  const playing = S.phase === 'playing';
+  $('pWait').classList.toggle('hidden', playing);
+  $('pGame').classList.toggle('hidden', !playing);
+  if (!playing) {
+    const last = S.history[S.history.length - 1];
+    if (S.phase === 'lobby') { $('pWaitTitle').textContent = "You're in!"; $('pWaitText').textContent = 'Wait for your teacher to start the round.'; }
+    else if (last) {
+      const rank = [...S.players].sort((a, b) => b.gain - a.gain).findIndex((p) => p.id === me.id) + 1;
+      $('pWaitTitle').textContent = `${last.label} round over`;
+      $('pWaitText').textContent = `You gained ${me.gain} points in ${me.trades} trades (#${rank} of ${S.players.length}).` +
+        (S.phase === 'between' ? ' Next round you get cash too.' : ' Thanks for playing!');
+    }
+    return;
+  }
+  const money = S.round === 2;
+  $('pScore').textContent = me.score;
+  $('pCash').textContent = `$${me.cash}`;
+  $('pCashBox').classList.toggle('hidden', !money);
+  $('pCashRule').textContent = money ? ' · each $1 = 1 point' : '';
+  document.querySelectorAll('.cashrow').forEach((r) => r.classList.toggle('hidden', !money));
+  $('pHand').innerHTML = grouped(me.hand).map(([i, n]) => `<span class="chip" style="cursor:default">${ico(i)}<span class="n">×${n}</span></span>`).join('');
+
+  const others = S.players.filter((p) => p.id !== me.id);
+  if (pick.to && !others.some((p) => p.id === pick.to)) pick = { to: null };
+  $('pPeople').innerHTML = others.map((p) =>
+    `<span class="pill chip ${pick.to === p.id ? 'sel' : ''} ${p.online ? '' : 'off'}" style="font-size:16px" data-id="${p.id}">${esc(p.name)}</span>`).join('') ||
+    '<span class="muted">No one else yet.</span>';
+  $('pPeople').querySelectorAll('[data-id]').forEach((el) => el.onclick = () => { pick = { to: el.dataset.id }; $('pGetCash').value = ''; $('pGiveCash').value = ''; renderPlayer(); });
+
+  $('pBuilder').classList.toggle('hidden', !pick.to);
+  if (pick.to) {
+    const them = others.find((p) => p.id === pick.to);
+    $('pThem').textContent = them.name;
+    if (pick.getItem && !them.hand.includes(pick.getItem)) pick.getItem = null;
+    if (pick.giveItem && !me.hand.includes(pick.giveItem)) pick.giveItem = null;
+    $('pTheirHand').innerHTML = chips(them.hand, pick.getItem, 'get');
+    $('pMyHand').innerHTML = chips(me.hand, pick.giveItem, 'give');
+    document.querySelectorAll('[data-get]').forEach((el) => el.onclick = () => { pick.getItem = pick.getItem === el.dataset.get ? null : el.dataset.get; $('pGetCash').value = ''; renderPlayer(); });
+    document.querySelectorAll('[data-give]').forEach((el) => el.onclick = () => { pick.giveItem = pick.giveItem === el.dataset.give ? null : el.dataset.give; $('pGiveCash').value = ''; renderPlayer(); });
+    updateSummary();
+  }
+  renderOffers();
+}
+function chips(hand, sel, kind) {
+  return grouped(hand).map(([i, n]) => `<span class="chip ${sel === i ? 'sel' : ''}" data-${kind}="${i}">${ico(i)}<span class="n">×${n}</span></span>`).join('');
+}
+function currentOffer() {
+  const gc = parseInt($('pGetCash').value, 10), vc = parseInt($('pGiveCash').value, 10);
+  const get = pick.getItem ? { item: pick.getItem } : gc > 0 ? { cash: gc } : null;
+  const give = pick.giveItem ? { item: pick.giveItem } : vc > 0 ? { cash: vc } : null;
+  return { get, give };
+}
+function updateSummary() {
+  const { get, give } = currentOffer();
+  $('pSummary').innerHTML = get && give ? `${side(give)} → ${side(get)}` : '';
+  $('pSend').disabled = !(get && give);
+}
+$('pGetCash').oninput = () => { if ($('pGetCash').value) pick.getItem = null; renderPlayer(); };
+$('pGiveCash').oninput = () => { if ($('pGiveCash').value) pick.giveItem = null; renderPlayer(); };
+$('pSend').onclick = () => {
+  const { get, give } = currentOffer();
+  socket.emit('offer:make', { to: pick.to, give, get }, (r) => {
+    $('pErr').textContent = r.error || '';
+    if (r.ok) { toast('Offer sent'); pick.getItem = pick.giveItem = null; $('pGetCash').value = ''; $('pGiveCash').value = ''; renderPlayer(); }
+  });
+};
+
+function renderOffers() {
+  if (!player) return;
+  const inc = offers.filter((o) => o.to === player.playerId);
+  const out = offers.filter((o) => o.from === player.playerId);
+  $('pIncoming').innerHTML = inc.map((o) =>
+    `<div class="offer"><span class="grow"><b>${esc(o.fromName)}</b> gives <span class="big">${side(o.give)}</span> for your <span class="big">${side(o.get)}</span></span>
+     <button class="small" data-acc="${o.id}">Accept</button><button class="small ghost" data-dec="${o.id}">No</button></div>`).join('') || '<span class="muted">None yet.</span>';
+  $('pOutgoing').innerHTML = out.map((o) =>
+    `<div class="offer"><span class="grow">To <b>${esc(o.toName)}</b>: <span class="big">${side(o.give)}</span> for <span class="big">${side(o.get)}</span></span>
+     <button class="small ghost" data-dec="${o.id}">Cancel</button></div>`).join('') || '<span class="muted">None.</span>';
+  document.querySelectorAll('[data-acc]').forEach((b) => b.onclick = () => socket.emit('offer:accept', { id: b.dataset.acc }, (r) => r.error && toast(r.error)));
+  document.querySelectorAll('[data-dec]').forEach((b) => b.onclick = () => socket.emit('offer:cancel', { id: b.dataset.dec }));
+}
+
+let itemsBuilt = false;
+function renderSettings() {
+  const editable = S.phase === 'lobby' || S.phase === 'between';
+  $('hSettings').classList.toggle('hidden', !editable);
+  if (!editable) return;
+  const st = S.settings;
+  if (!itemsBuilt) {
+    itemsBuilt = true;
+    $('hItems').innerHTML = S.catalog.map((c) =>
+      `<div class="item" data-item="${c.e}"><span class="em" title="Switch on/off">${ico(c.e)}</span>
+        <div><div class="lbl">${c.name}</div><input type="number" min="0" max="500" inputmode="numeric"></div></div>`).join('');
+    $('hItems').querySelectorAll('.item').forEach((el) => {
+      const e = el.dataset.item;
+      el.querySelector('.em').onclick = () => socket.emit('host:settings', { hostToken: host.hostToken, on: { [e]: !S.settings.on[e] } });
+      el.querySelector('input').onchange = (ev) => socket.emit('host:settings', { hostToken: host.hostToken, counts: { [e]: parseInt(ev.target.value, 10) || 0 } });
+    });
+  }
+  let total = 0;
+  $('hItems').querySelectorAll('.item').forEach((el) => {
+    const e = el.dataset.item, on = !!st.on[e], n = st.counts[e] || 0;
+    if (on) total += n;
+    el.classList.toggle('offi', !on);
+    const inp = el.querySelector('input');
+    inp.disabled = !on;
+    if (document.activeElement !== inp) inp.value = on ? n : '';
+  });
+  const per = S.players.length ? Math.round((total / S.players.length) * 10) / 10 : 0;
+  $('hTotal').textContent = `${total} items` + (S.players.length ? ` ≈ ${per} each` : '');
+  $('hAuto').disabled = st.auto;
+  $('hAuto').textContent = st.auto ? 'Auto ✓' : 'Back to auto';
+}
+$('hAuto').onclick = () => socket.emit('host:settings', { hostToken: host.hostToken, auto: true });
+$('hNew').addEventListener('click', () => { itemsBuilt = false; demo = false; });
+
+// demo
+let demo = false;
+$('dBtn').onclick = () => socket.emit('host:create', null, (r) => {
+  host = r; store.set('host', r); mode = 'host'; demo = true; show('host');
+  socket.emit('host:bots', { hostToken: r.hostToken, n: 5 });
+  render();
+});
+$('hBots').onclick = () => { demo = true; socket.emit('host:bots', { hostToken: host.hostToken, n: 5 }); };
+$('hOpenStudent').onclick = () => window.open(`/?code=${S.code}&name=You`, '_blank');
+
+// host buttons
+$('hStart1').onclick = () => socket.emit('host:start', { hostToken: host.hostToken, round: 1 });
+$('hStart2').onclick = () => socket.emit('host:start', { hostToken: host.hostToken, round: 2 });
+$('hNew').onclick = () => { $('hFeed').innerHTML = '<span class="muted">Trades appear here live.</span>'; $('hBtn').click(); };
+$('hEnd').onclick = () => socket.emit('host:end', { hostToken: host.hostToken });
+
+// timers
+setInterval(() => {
+  const t = S && S.phase === 'playing' ? Math.max(0, Math.round((S.endsAt - Date.now()) / 1000)) : null;
+  const txt = t === null ? '' : `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+  $('hTimer').textContent = txt; $('pTimer').textContent = txt;
+}, 500);
+</script>
+</body>
+</html>
