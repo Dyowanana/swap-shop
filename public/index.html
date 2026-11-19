@@ -231,7 +231,7 @@ const params = new URLSearchParams(location.search);
 if (params.get('code')) $('jCode').value = params.get('code');
 if (params.get('name')) $('jName').value = params.get('name');
 $('jBtn').onclick = () => join($('jCode').value, $('jName').value);
-$('jName').onkeydown = (e) => e.key === 'Enter' && $('jBtn').click();
+$('jName').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('jBtn').click(); });
 $('hBtn').onclick = () => socket.emit('host:create', null, (r) => { host = r; store.set('host', r); mode = 'host'; show('host'); render(); });
 
 function join(code, name, playerId) {
